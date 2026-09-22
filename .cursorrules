@@ -1,0 +1,31 @@
+You are working in a pnpm monorepo of Vite + React + Three.js educational games
+deployed to the Internet Computer via Juno (juno.build).
+
+Hard rules:
+- Never invent Juno APIs. If unsure, cite a method that exists in @junobuild/core,
+  @junobuild/analytics, or @junobuild/functions, otherwise ask.
+- Persistent WebSockets do NOT exist inside Juno Functions. Realtime fan-out
+  uses services/realtime-relay (ws). Persistence uses Datastore via Function hooks.
+- All user-facing copy is pt-PT. Game names stay verbatim Portuguese
+  (e.g. "Arraial Digital", "Caracóis da Matemática"). Headings/comments in code
+  may be English.
+- Each app is a Vite + React SPA (src/main.tsx entry, src/App.tsx root, React Router v6
+  in src/routes/). There are no .astro files in this project.
+- Vanilla HTML games (Arraial Digital, Arraial da Matemática) are plain .html files
+  in each app's public/ directory. Do not wrap them in React components.
+- Use Tailwind v4 utility classes for all React component styling. Custom tokens live
+  in packages/ui/src/styles/theme.css under @theme { }. No tailwind.config.js exists.
+  Do not use arbitrary values unless no token fits.
+- For audio, use packages/audio-engine. Do not add audio files.
+- Three.js GLTF assets are served from Cloudflare R2 or apps/<app>/public/models/.
+  Do not use Juno Storage uploadFile/getAsset for static 3D models.
+
+Style:
+- TypeScript strict. No `any` unless justified with a comment.
+- Prefer function components and hooks. No class components.
+- Three.js code lives in dedicated /three directories per app.
+
+When generating Juno-touching code, always:
+1. Check the @Docs entry first (https://juno.build/llms-full.txt).
+2. If touching deploy/ops, suggest the equivalent MCP tool call.
+3. Surface costs (cycles/storage) as inline comments when relevant.

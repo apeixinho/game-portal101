@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Escudo Digital · Arraial Digital</title>
+    <style>
+      :root {
+        --orange: #ff7a2b;
+        --pink: #c22b5f;
+        --yellow: #f5d442;
+        --purple: #2a1248;
+        --cream: #fff4e0;
+        --green: #2ecc71;
+        --red: #e74c3c;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Nunito", system-ui, sans-serif;
+        color: var(--cream);
+        background: radial-gradient(ellipse at 50% -10%, #5a2a8c 0%, #2a1248 45%, #160826 100%);
+      }
+      .wrap {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 1.5rem 1.2rem 4rem;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+        color: var(--cream);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        padding: 0.5rem 1rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .back:hover { background: rgba(255, 255, 255, 0.16); }
+      h1 {
+        font-family: "Lilita One", system-ui, cursive;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        margin: 0;
+        font-size: 1.4rem;
+        color: var(--yellow);
+      }
+      .card {
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 22px;
+        padding: 1.5rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: rgba(255, 244, 224, 0.75);
+        margin-bottom: 0.8rem;
+      }
+      .bar {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+        margin-bottom: 1.4rem;
+      }
+      .bar > i {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--orange), var(--yellow));
+        transition: width 0.3s ease;
+      }
+      .prompt {
+        font-size: 1.25rem;
+        font-weight: 800;
+        line-height: 1.35;
+        margin: 0 0 1.2rem;
+      }
+      .options { display: grid; gap: 0.7rem; }
+      .opt {
+        text-align: left;
+        padding: 0.9rem 1.1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--cream);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+      }
+      .opt:hover:not(:disabled) { transform: translateY(-2px); background: rgba(255, 255, 255, 0.12); }
+      .opt:disabled { cursor: default; }
+      .opt.correct { background: rgba(46, 204, 113, 0.25); border-color: var(--green); }
+      .opt.wrong { background: rgba(231, 76, 60, 0.25); border-color: var(--red); }
+      .feedback {
+        margin-top: 1.1rem;
+        min-height: 1.5rem;
+        font-weight: 700;
+      }
+      .explain {
+        margin-top: 0.4rem;
+        font-weight: 500;
+        font-size: 0.92rem;
+        color: rgba(255, 244, 224, 0.8);
+      }
+      .next {
+        margin-top: 1.3rem;
+        width: 100%;
+        padding: 0.95rem;
+        border: 0;
+        border-radius: 14px;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        color: var(--purple);
+        background: linear-gradient(120deg, var(--yellow), var(--orange));
+      }
+      .next[hidden] { display: none; }
+      .end { text-align: center; }
+      .end .score-big {
+        font-family: "Lilita One", system-ui, cursive;
+        font-size: 3.2rem;
+        color: var(--yellow);
+        margin: 0.4rem 0;
+      }
+      .best { color: rgba(255, 244, 224, 0.8); margin-bottom: 1.4rem; }
+      .badge {
+        display: inline-block;
+        background: rgba(245, 212, 66, 0.18);
+        border: 1px solid var(--yellow);
+        border-radius: 999px;
+        padding: 0.3rem 0.9rem;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: var(--yellow);
+      }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="back" href="/">← Voltar</a>
+        <h1>🛡️ Escudo Digital</h1>
+      </div>
+
+      <div class="card" id="game">
+        <div class="meta">
+          <span id="progress">Pergunta 1</span>
+          <span id="score">Pontos: 0</span>
+        </div>
+        <div class="bar"><i id="barFill"></i></div>
+        <p class="prompt" id="prompt"></p>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        <div class="explain" id="explain"></div>
+        <button class="next" id="next" hidden>Próxima →</button>
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "arraial-digital:escudo-digital:best";
+
+      const QUESTIONS = [
+        {
+          prompt: "Qual destas é a palavra-passe mais segura?",
+          options: ["123456", "joao2010", "C@racol-Verde-87!", "password"],
+          correct: 2,
+          explanation: "Palavras-passe fortes misturam letras, números e símbolos e são longas.",
+        },
+        {
+          prompt: "Recebes um email a pedir os teus dados do banco com urgência. O que é?",
+          options: ["Uma promoção", "Phishing (burla)", "Uma atualização normal", "Spam inofensivo"],
+          correct: 1,
+          explanation: "Pedidos urgentes de dados pessoais são típicos de phishing. Nunca respondas.",
+        },
+        {
+          prompt: "O que deves fazer antes de instalar uma aplicação desconhecida?",
+          options: [
+            "Instalar logo, é mais rápido",
+            "Verificar a fonte e as permissões",
+            "Desligar o antivírus",
+            "Pedir a palavra-passe a um amigo",
+          ],
+          correct: 1,
+          explanation: "Instala apenas de fontes fiáveis e confere que permissões a app pede.",
+        },
+        {
+          prompt: "Porque é importante a autenticação em dois passos (2FA)?",
+          options: [
+            "Torna o login mais lento",
+            "Adiciona uma segunda proteção além da palavra-passe",
+            "Substitui o antivírus",
+            "Não serve para nada",
+          ],
+          correct: 1,
+          explanation: "Mesmo que descubram a palavra-passe, falta o segundo código para entrar.",
+        },
+        {
+          prompt: "Numa rede Wi‑Fi pública, o que NÃO deves fazer?",
+          options: [
+            "Ler notícias",
+            "Aceder à conta do banco sem proteção",
+            "Ver vídeos",
+            "Consultar o tempo",
+          ],
+          correct: 1,
+          explanation: "Redes públicas podem ser espiadas. Evita dados sensíveis ou usa uma VPN.",
+        },
+        {
+          prompt: "Alguém te insulta repetidamente nas redes sociais. Isto chama-se:",
+          options: ["Cyberbullying", "Backup", "Download", "Cookie"],
+          correct: 0,
+          explanation: "É cyberbullying. Guarda provas, bloqueia e fala com um adulto de confiança.",
+        },
+      ];
+
+      const els = {
+        progress: document.getElementById("progress"),
+        score: document.getElementById("score"),
+        bar: document.getElementById("barFill"),
+        prompt: document.getElementById("prompt"),
+        options: document.getElementById("options"),
+        feedback: document.getElementById("feedback"),
+        explain: document.getElementById("explain"),
+        next: document.getElementById("next"),
+        game: document.getElementById("game"),
+      };
+
+      let index = 0;
+      let score = 0;
+      let answered = false;
+
+      function render() {
+        answered = false;
+        const q = QUESTIONS[index];
+        els.progress.textContent = `Pergunta ${index + 1} de ${QUESTIONS.length}`;
+        els.score.textContent = `Pontos: ${score}`;
+        els.bar.style.width = `${(index / QUESTIONS.length) * 100}%`;
+        els.prompt.textContent = q.prompt;
+        els.feedback.textContent = "";
+        els.explain.textContent = "";
+        els.next.hidden = true;
+        els.options.innerHTML = "";
+
+        q.options.forEach((text, i) => {
+          const btn = document.createElement("button");
+          btn.className = "opt";
+          btn.textContent = text;
+          btn.addEventListener("click", () => choose(i, btn));
+          els.options.appendChild(btn);
+        });
+      }
+
+      function choose(i, btn) {
+        if (answered) return;
+        answered = true;
+        const q = QUESTIONS[index];
+        const buttons = [...els.options.querySelectorAll(".opt")];
+        buttons.forEach((b) => (b.disabled = true));
+
+        if (i === q.correct) {
+          score += 10;
+          btn.classList.add("correct");
+          els.feedback.textContent = "✅ Boa! Escudo reforçado.";
+          els.feedback.style.color = "var(--green)";
+        } else {
+          btn.classList.add("wrong");
+          buttons[q.correct].classList.add("correct");
+          els.feedback.textContent = "❌ Cuidado! Essa não era a melhor escolha.";
+          els.feedback.style.color = "var(--red)";
+        }
+        els.explain.textContent = q.explanation;
+        els.score.textContent = `Pontos: ${score}`;
+        els.next.hidden = false;
+        els.next.textContent = index + 1 < QUESTIONS.length ? "Próxima →" : "Ver resultado →";
+      }
+
+      els.next.addEventListener("click", () => {
+        index += 1;
+        if (index < QUESTIONS.length) {
+          render();
+        } else {
+          finish();
+        }
+      });
+
+      function finish() {
+        const max = QUESTIONS.length * 10;
+        const prevBest = Number(localStorage.getItem(STORAGE_KEY) || 0);
+        const best = Math.max(prevBest, score);
+        localStorage.setItem(STORAGE_KEY, String(best));
+
+        const isNewRecord = score > prevBest;
+        els.bar.style.width = "100%";
+        els.game.innerHTML = `
+          <div class="end">
+            <p class="badge">${isNewRecord ? "🏆 Novo recorde!" : "Resultado"}</p>
+            <p class="score-big">${score} / ${max}</p>
+            <p>${mensagem(score, max)}</p>
+            <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+            <button class="next" id="again">Jogar outra vez ↻</button>
+          </div>
+        `;
+        document.getElementById("again").addEventListener("click", () => {
+          index = 0;
+          score = 0;
+          location.reload();
+        });
+      }
+
+      function mensagem(s, max) {
+        const pct = s / max;
+        if (pct === 1) return "Parabéns! És um verdadeiro guardião digital! 🛡️";
+        if (pct >= 0.6) return "Muito bem! O teu escudo está forte.";
+        if (pct >= 0.3) return "Nada mal — continua a treinar a tua segurança.";
+        return "Volta a tentar e reforça o teu escudo digital!";
+      }
+
+      render();
+    </script>
+  </body>
+</html>

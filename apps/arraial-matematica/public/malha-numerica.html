@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Malha Numérica · Arraial da Matemática</title>
+    <style>
+      :root { --violet:#a56bff; --deep:#3e1e7a; --yellow:#f5d442; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #7a4bd0 0%, #3e1e7a 45%, #1a0b3a 100%); }
+      .wrap { max-width:640px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.2rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.3rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.9rem; color:rgba(255,244,224,.85); margin-bottom:1rem; }
+      .meta b { color:var(--yellow); }
+      .target { text-align:center; margin-bottom:1.6rem; }
+      .target small { display:block; text-transform:uppercase; letter-spacing:.2em; font-size:.7rem; color:rgba(255,244,224,.7); }
+      .target b { font-family:"Lilita One",system-ui,cursive; font-weight:400; font-size:3rem; color:var(--yellow); }
+      .track { position:relative; height:64px; margin:1.5rem 0; cursor:crosshair; }
+      .line { position:absolute; top:50%; left:0; right:0; height:6px; transform:translateY(-50%); border-radius:999px;
+        background:linear-gradient(90deg,var(--violet),var(--yellow)); }
+      .ticks { position:absolute; inset:0; display:flex; justify-content:space-between; align-items:flex-end; font-size:.75rem; color:rgba(255,244,224,.6); }
+      .marker { position:absolute; top:50%; width:0; height:0; transform:translate(-50%,-50%); }
+      .marker .disc { position:absolute; top:-14px; left:-14px; width:28px; height:28px; border-radius:50%; }
+      .marker.you .disc { background:#fff; box-shadow:0 0 12px #fff; }
+      .marker.real .disc { background:var(--green); border:2px solid #fff; }
+      .marker span { position:absolute; top:14px; left:-20px; width:40px; text-align:center; font-size:.75rem; font-weight:800; }
+      .feedback { text-align:center; margin-top:.6rem; min-height:1.5rem; font-weight:800; }
+      .next { margin-top:1.1rem; width:100%; padding:.9rem; border:0; border-radius:14px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; color:var(--deep); background:linear-gradient(120deg,var(--yellow),var(--violet)); }
+      .next[hidden] { display:none; }
+      .end { text-align:center; }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3rem; color:var(--yellow); margin:.3rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.2rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>🥏 Malha Numérica</h1></div>
+      <div class="card" id="game">
+        <div class="meta"><span>Lançamento <b id="round">1</b> de 8</span><span>Pontos: <b id="score">0</b></span></div>
+        <div class="target"><small>Acerta no número</small><b id="target">0</b></div>
+        <div class="track" id="track">
+          <div class="line"></div>
+          <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+        <p style="text-align:center;margin:0;color:rgba(255,244,224,.7);font-size:.9rem">Toca na linha onde achas que está o número.</p>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        <button class="next" id="next" hidden>Próximo lançamento →</button>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-matematica:malha-numerica:best";
+      const ROUNDS = 8, MAX = 100;
+      const els = { round:g("round"), score:g("score"), target:g("target"), track:g("track"), feedback:g("feedback"), next:g("next"), game:g("game") };
+      function g(id){ return document.getElementById(id); }
+      let round=1, score=0, target=0, thrown=false;
+      function newRound(){
+        thrown=false; target=1+Math.floor(Math.random()*(MAX-1));
+        els.round.textContent=round; els.target.textContent=target; els.feedback.textContent=""; els.next.hidden=true;
+        [...els.track.querySelectorAll(".marker")].forEach(m=>m.remove());
+      }
+      function place(cls,value,label){
+        const m=document.createElement("div"); m.className="marker "+cls; m.style.left=`${(value/MAX)*100}%`;
+        m.innerHTML=`<div class="disc"></div><span>${label}</span>`; els.track.appendChild(m);
+      }
+      els.track.addEventListener("click",(e)=>{
+        if(thrown) return; thrown=true;
+        const rect=els.track.getBoundingClientRect();
+        const ratio=Math.min(1,Math.max(0,(e.clientX-rect.left)/rect.width));
+        const guess=Math.round(ratio*MAX); const err=Math.abs(guess-target);
+        const pts=Math.max(0,10-Math.round(err/3)); score+=pts; els.score.textContent=score;
+        place("you",guess,guess); place("real",target,target);
+        els.feedback.style.color = err===0?"var(--green)":err<=5?"var(--yellow)":"var(--cream)";
+        els.feedback.textContent = err===0?`🎯 Na mosca! +${pts}` : `Erraste por ${err}. +${pts} pontos`;
+        els.next.hidden=false; els.next.textContent = round<ROUNDS ? "Próximo lançamento →" : "Ver resultado →";
+      });
+      els.next.addEventListener("click",()=>{ round++; if(round>ROUNDS) finish(); else newRound(); });
+      function finish(){
+        const max=ROUNDS*10; const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev;
+        els.game.innerHTML=`<div class="end"><p class="badge">${rec?"🏆 Novo recorde!":"Resultado"}</p>
+          <p class="score-big">${score} / ${max}</p><p>${score>=70?"Pontaria afinada! 🥏":"Bom lançamento! Treina a tua estimativa."}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="next" id="again" style="position:static">Jogar outra vez ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+      newRound();
+    </script>
+  </body>
+</html>

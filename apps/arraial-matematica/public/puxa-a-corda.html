@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Puxa a Corda · Arraial da Matemática</title>
+    <style>
+      :root {
+        --violet: #a56bff;
+        --deep: #3e1e7a;
+        --yellow: #f5d442;
+        --cream: #fff4e0;
+        --green: #2ecc71;
+        --red: #e74c3c;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Nunito", system-ui, sans-serif;
+        color: var(--cream);
+        background: radial-gradient(ellipse at 50% -10%, #7a4bd0 0%, #3e1e7a 45%, #1a0b3a 100%);
+      }
+      .wrap { max-width: 720px; margin: 0 auto; padding: 1.5rem 1.2rem 4rem; }
+      .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; margin-bottom: 1.5rem;
+      }
+      .back {
+        display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none;
+        color: var(--cream); background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px;
+        padding: 0.5rem 1rem; font-weight: 700; font-size: 0.9rem;
+      }
+      .back:hover { background: rgba(255, 255, 255, 0.16); }
+      h1 {
+        font-family: "Lilita One", system-ui, cursive; font-weight: 400; margin: 0;
+        font-size: 1.4rem; color: var(--yellow);
+      }
+      .card {
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+        border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 22px; padding: 1.5rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      }
+      .diff { text-align: center; }
+      .diff h2 { font-family: "Lilita One", system-ui, cursive; font-weight: 400; color: var(--yellow); margin: 0 0 0.3rem; }
+      .diff p { color: rgba(255,244,224,0.8); margin: 0 0 1.4rem; }
+      .diff-btns { display: grid; gap: 0.7rem; }
+      .diff-btn {
+        padding: 1rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.06); color: var(--cream); font-size: 1.05rem;
+        font-weight: 800; cursor: pointer; transition: transform .12s ease, background .12s ease;
+      }
+      .diff-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.12); }
+      .diff-btn small { display: block; font-weight: 500; font-size: 0.8rem; color: rgba(255,244,224,0.7); margin-top: 0.2rem; }
+
+      .meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,244,224,0.8); margin-bottom: 0.8rem; }
+      .meta b { color: var(--yellow); }
+
+      .arena { position: relative; height: 86px; margin: 0.5rem 0 1rem; }
+      .team {
+        position: absolute; top: 0; font-size: 2.4rem; line-height: 86px;
+      }
+      .team.left { left: 0; }
+      .team.right { right: 0; }
+      .rope {
+        position: absolute; top: 50%; left: 12%; right: 12%; height: 6px;
+        transform: translateY(-50%);
+        background: repeating-linear-gradient(90deg, #d9a441 0 10px, #b8862c 10px 20px);
+        border-radius: 999px;
+      }
+      .centerline {
+        position: absolute; top: 18%; bottom: 18%; left: 50%; width: 2px;
+        background: rgba(255,255,255,0.4); transform: translateX(-50%);
+      }
+      .knot {
+        position: absolute; top: 50%; left: 50%; width: 26px; height: 26px;
+        background: var(--yellow); border: 3px solid #fff; border-radius: 50%;
+        box-shadow: 0 0 16px var(--yellow);
+        transform: translate(-50%, -50%); transition: left 0.35s ease;
+      }
+
+      .timerbar { height: 7px; border-radius: 999px; background: rgba(255,255,255,0.12); overflow: hidden; margin-bottom: 1.1rem; }
+      .timerbar > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--violet), var(--yellow)); transition: width 0.1s linear; }
+
+      .question { text-align: center; font-size: 2rem; font-weight: 800; margin: 0 0 1.1rem; }
+      .options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+      .opt {
+        padding: 1rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06); color: var(--cream); font-size: 1.3rem;
+        font-weight: 800; cursor: pointer; transition: transform .1s ease, background .12s ease;
+      }
+      .opt:hover:not(:disabled) { transform: translateY(-2px); background: rgba(255,255,255,0.12); }
+      .opt:disabled { cursor: default; }
+      .opt.correct { background: rgba(46,204,113,0.3); border-color: var(--green); }
+      .opt.wrong { background: rgba(231,76,60,0.3); border-color: var(--red); }
+      .feedback { text-align: center; margin-top: 1rem; min-height: 1.4rem; font-weight: 800; }
+
+      .end { text-align: center; }
+      .end .big { font-family: "Lilita One", system-ui, cursive; font-size: 2.6rem; color: var(--yellow); margin: 0.3rem 0; }
+      .best { color: rgba(255,244,224,0.8); margin-bottom: 1.3rem; }
+      .play {
+        padding: 0.95rem 1.6rem; border: 0; border-radius: 14px; font-size: 1rem; font-weight: 800;
+        letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; color: var(--deep);
+        background: linear-gradient(120deg, var(--yellow), var(--violet));
+      }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="back" href="/">← Voltar</a>
+        <h1>🪢 Puxa a Corda</h1>
+      </div>
+      <div class="card" id="root"></div>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "arraial-matematica:puxa-a-corda:best";
+
+      const LEVELS = {
+        facil:   { label: "Fácil",   desc: "Somas e subtrações até 20", time: 7000, cpuPull: 8,  ops: ["+", "-"], max: 20 },
+        medio:   { label: "Médio",   desc: "Cálculos até 50 e tabuada",  time: 6000, cpuPull: 11, ops: ["+", "-", "×"], max: 50 },
+        dificil: { label: "Difícil", desc: "Até 100 com × e ÷",          time: 5000, cpuPull: 14, ops: ["+", "-", "×", "÷"], max: 100 },
+      };
+
+      const PLAYER_PULL = 14;   // rope units gained on a correct answer
+      const WIN_AT = 100;       // |position| needed to win
+
+      const root = document.getElementById("root");
+      let level, position, streak, bestStreak, timer, deadline, current;
+
+      function rnd(n) { return Math.floor(Math.random() * n); }
+
+      function makeQuestion() {
+        const op = level.ops[rnd(level.ops.length)];
+        let a, b, answer;
+        if (op === "+") { a = rnd(level.max); b = rnd(level.max); answer = a + b; }
+        else if (op === "-") { a = rnd(level.max); b = rnd(a + 1); answer = a - b; }
+        else if (op === "×") { const m = level.max <= 20 ? 9 : 12; a = 1 + rnd(m); b = 1 + rnd(m); answer = a * b; }
+        else { b = 1 + rnd(9); answer = 1 + rnd(9); a = b * answer; } // a ÷ b = answer
+        const options = new Set([answer]);
+        while (options.size < 4) {
+          const delta = 1 + rnd(Math.max(5, Math.floor(answer * 0.4)) + 2);
+          const cand = Math.random() < 0.5 ? answer + delta : answer - delta;
+          if (cand >= 0) options.add(cand);
+        }
+        return { text: `${a} ${op} ${b}`, answer, options: shuffle([...options]) };
+      }
+
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = rnd(i + 1);
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      function chooseLevel() {
+        root.innerHTML = `
+          <div class="diff">
+            <h2>Escolhe a dificuldade</h2>
+            <p>Responde certo para puxar a corda para o teu lado. Cuidado com o tempo!</p>
+            <div class="diff-btns">
+              ${Object.entries(LEVELS).map(([k, v]) => `
+                <button class="diff-btn" data-level="${k}">
+                  ${v.label}<small>${v.desc}</small>
+                </button>`).join("")}
+            </div>
+          </div>`;
+        root.querySelectorAll(".diff-btn").forEach((b) =>
+          b.addEventListener("click", () => start(b.dataset.level)));
+      }
+
+      function start(key) {
+        level = LEVELS[key];
+        position = 0;
+        streak = 0;
+        bestStreak = 0;
+        renderArena();
+        nextQuestion();
+      }
+
+      function renderArena() {
+        root.innerHTML = `
+          <div class="meta">
+            <span>Sequência: <b id="streak">0</b></span>
+            <span>Dificuldade: <b>${level.label}</b></span>
+          </div>
+          <div class="arena">
+            <span class="team left">🧑‍🎓</span>
+            <span class="team right">🤖</span>
+            <div class="rope"></div>
+            <div class="centerline"></div>
+            <div class="knot" id="knot"></div>
+          </div>
+          <div class="timerbar"><i id="timerFill"></i></div>
+          <p class="question" id="question"></p>
+          <div class="options" id="options"></div>
+          <div class="feedback" id="feedback" role="status" aria-live="polite"></div>`;
+        updateKnot();
+      }
+
+      function updateKnot() {
+        const pct = 50 + (position / WIN_AT) * 38; // map -100..100 to 12%..88%
+        document.getElementById("knot").style.left = `${pct}%`;
+      }
+
+      function nextQuestion() {
+        current = makeQuestion();
+        document.getElementById("question").textContent = `${current.text} = ?`;
+        document.getElementById("feedback").textContent = "";
+        const opts = document.getElementById("options");
+        opts.innerHTML = "";
+        current.options.forEach((val) => {
+          const btn = document.createElement("button");
+          btn.className = "opt";
+          btn.textContent = val;
+          btn.addEventListener("click", () => answer(val, btn));
+          opts.appendChild(btn);
+        });
+        startTimer();
+      }
+
+      function startTimer() {
+        clearInterval(timer);
+        deadline = Date.now() + level.time;
+        const fill = document.getElementById("timerFill");
+        timer = setInterval(() => {
+          const left = Math.max(0, deadline - Date.now());
+          fill.style.width = `${(left / level.time) * 100}%`;
+          if (left <= 0) {
+            clearInterval(timer);
+            answer(null, null);
+          }
+        }, 80);
+      }
+
+      function answer(val, btn) {
+        clearInterval(timer);
+        const opts = [...document.querySelectorAll(".opt")];
+        opts.forEach((b) => {
+          b.disabled = true;
+          if (Number(b.textContent) === current.answer) b.classList.add("correct");
+        });
+        const fb = document.getElementById("feedback");
+
+        if (val === current.answer) {
+          position += PLAYER_PULL;
+          streak += 1;
+          bestStreak = Math.max(bestStreak, streak);
+          fb.style.color = "var(--green)";
+          fb.textContent = "✅ Puxaste a corda!";
+        } else {
+          position -= level.cpuPull;
+          streak = 0;
+          if (btn) btn.classList.add("wrong");
+          fb.style.color = "var(--red)";
+          fb.textContent = val === null ? "⏰ Tempo esgotado! O robô puxou." : "❌ O robô puxou a corda.";
+        }
+        document.getElementById("streak").textContent = streak;
+        updateKnot();
+
+        if (position >= WIN_AT) return finish(true);
+        if (position <= -WIN_AT) return finish(false);
+        setTimeout(nextQuestion, 850);
+      }
+
+      function finish(won) {
+        const prevBest = Number(localStorage.getItem(STORAGE_KEY) || 0);
+        const best = Math.max(prevBest, bestStreak);
+        localStorage.setItem(STORAGE_KEY, String(best));
+        root.innerHTML = `
+          <div class="end">
+            <p class="big">${won ? "🎉 Ganhaste!" : "😅 O robô ganhou"}</p>
+            <p>${won ? "Parabéns! Puxaste a corda até ao fim." : "Não desistas — tenta outra vez!"}</p>
+            <p>Melhor sequência nesta partida: <strong>${bestStreak}</strong></p>
+            <p class="best">Recorde de sequência: <strong>${best}</strong></p>
+            <button class="play" id="again">Jogar outra vez ↻</button>
+          </div>`;
+        document.getElementById("again").addEventListener("click", chooseLevel);
+      }
+
+      chooseLevel();
+    </script>
+  </body>
+</html>

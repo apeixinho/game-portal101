@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Caça ao Tesouro Digital · Arraial Digital</title>
+    <style>
+      :root { --orange:#ff7a2b; --pink:#c22b5f; --yellow:#f5d442; --purple:#2a1248; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #5a2a8c 0%, #2a1248 45%, #160826 100%); }
+      .wrap { max-width:640px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.4rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.85rem; color:rgba(255,244,224,.75); margin-bottom:1rem; }
+      .map { display:flex; align-items:center; justify-content:space-between; gap:.2rem; background:rgba(0,0,0,.2);
+        border-radius:14px; padding:.7rem .5rem; margin-bottom:1.3rem; overflow-x:auto; }
+      .step { font-size:1.4rem; opacity:.4; transition:opacity .3s ease, transform .3s ease; }
+      .step.done { opacity:1; }
+      .step.here { opacity:1; transform:scale(1.4); filter:drop-shadow(0 0 8px var(--yellow)); }
+      .prompt { font-size:1.2rem; font-weight:800; line-height:1.35; margin:0 0 1.2rem; }
+      .options { display:grid; gap:.7rem; }
+      .opt { text-align:left; padding:.9rem 1.1rem; border-radius:14px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+        color:var(--cream); font-size:1rem; font-weight:600; cursor:pointer; transition:transform .12s ease, background .12s ease; }
+      .opt:hover:not(:disabled) { transform:translateY(-2px); background:rgba(255,255,255,.12); }
+      .opt:disabled { cursor:default; }
+      .opt.correct { background:rgba(46,204,113,.25); border-color:var(--green); }
+      .opt.wrong { background:rgba(231,76,60,.25); border-color:var(--red); }
+      .feedback { margin-top:1rem; min-height:1.4rem; font-weight:800; }
+      .end { text-align:center; }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3rem; color:var(--yellow); margin:.4rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.3rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+      .play { padding:.95rem 1.6rem; border:0; border-radius:14px; font-size:1rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:var(--purple); background:linear-gradient(120deg,var(--yellow),var(--orange)); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>🗺️ Caça ao Tesouro Digital</h1></div>
+      <div class="card" id="game">
+        <div class="meta"><span id="lives">❤️❤️❤️</span><span id="score">Pontos: 0</span></div>
+        <div class="map" id="map"></div>
+        <p class="prompt" id="prompt"></p>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-digital:caca-tesouro-digital:best";
+      const CLUES = [
+        { prompt:"Para guardares o teu trabalho em segurança, deves fazer regularmente um…", options:["backup (cópia)","print","logout","zoom"], correct:0 },
+        { prompt:"Onde encontras ficheiros que apagaste por engano?", options:["Reciclagem","Wi-Fi","Browser","Teclado"], correct:0 },
+        { prompt:"Que símbolo separa o nome do utilizador no endereço de email?", options:["#","@","&","%"], correct:1 },
+        { prompt:"Para procurares informação na Internet usas um…", options:["motor de busca","antivírus","ecrã","rato"], correct:0 },
+        { prompt:"Um conjunto de páginas web ligadas entre si é um…", options:["website","ficheiro","cabo","pixel"], correct:0 },
+        { prompt:"O cofre do tesouro pede uma palavra-passe. Qual é a melhor?", options:["1234","Tesouro!2024#Ilha","ana","tesouro"], correct:1 },
+      ];
+      const PATH = ["🧭","🌴","⛰️","🏝️","🚩","🔒","💎"]; // steps + treasure
+      const els = { lives:g("lives"), score:g("score"), map:g("map"), prompt:g("prompt"), options:g("options"), feedback:g("feedback"), game:g("game") };
+      function g(id){ return document.getElementById(id); }
+      function rnd(n){ return Math.floor(Math.random()*n); }
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+      let index=0, score=0, lives=3, answered=false;
+      function drawMap(){
+        els.map.innerHTML="";
+        PATH.forEach((emoji,i)=>{ const s=document.createElement("span"); s.className="step"+(i<index?" done":i===index?" here":""); s.textContent=emoji; els.map.appendChild(s); });
+      }
+      function render(){
+        answered=false; drawMap(); const clue=CLUES[index];
+        els.prompt.textContent=clue.prompt; els.feedback.textContent=""; els.options.innerHTML="";
+        const opts=clue.options.map((t,i)=>({t,i})); shuffle(opts);
+        opts.forEach(o=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=o.t; b.addEventListener("click",()=>choose(o.i,b)); els.options.appendChild(b); });
+      }
+      function choose(i,btn){
+        if(answered) return; answered=true; const clue=CLUES[index];
+        const bs=[...els.options.querySelectorAll(".opt")]; bs.forEach(b=>b.disabled=true);
+        if(i===clue.correct){
+          score+=10; btn.classList.add("correct"); els.feedback.style.color="var(--green)"; els.feedback.textContent="✅ Pista resolvida! Avança…";
+          els.score.textContent=`Pontos: ${score}`;
+          index++; setTimeout(()=>{ if(index>=CLUES.length) finish(true); else render(); }, 800);
+        } else {
+          btn.classList.add("wrong"); bs.forEach(b=>{ if(b.textContent===clue.options[clue.correct]) b.classList.add("correct"); });
+          lives--; els.lives.textContent="❤️".repeat(lives)||"💀";
+          els.feedback.style.color="var(--red)"; els.feedback.textContent="❌ Pista errada!";
+          if(lives<=0){ setTimeout(()=>finish(false), 900); }
+          else { setTimeout(()=>{ answered=false; bs.forEach(b=>{ b.disabled=false; b.classList.remove("wrong","correct"); }); els.feedback.textContent=""; }, 900); }
+        }
+      }
+      function finish(won){
+        const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev;
+        els.game.innerHTML=`<div class="end"><p class="badge">${won?(rec?"🏆 Novo recorde!":"💎 Tesouro encontrado!"):"Fim da expedição"}</p>
+          <p class="score-big">${score}</p>
+          <p>${won?"Parabéns! Desvendaste todas as pistas e encontraste o tesouro digital!":"Ficaste sem vidas. O tesouro continua escondido…"}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="play" id="again">Nova expedição ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+      render();
+    </script>
+  </body>
+</html>

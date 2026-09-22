@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Pombo Correio Digital · Arraial Digital</title>
+    <style>
+      :root { --orange:#ff7a2b; --pink:#c22b5f; --yellow:#f5d442; --purple:#2a1248; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; }
+      * { box-sizing: border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #5a2a8c 0%, #2a1248 45%, #160826 100%); }
+      .wrap { max-width:640px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.4rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.85rem; color:rgba(255,244,224,.75); margin-bottom:.8rem; }
+      .bar { height:8px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:1.4rem; }
+      .bar>i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--orange),var(--yellow)); transition:width .3s ease; }
+      .prompt { font-size:1.25rem; font-weight:800; line-height:1.35; margin:0 0 1.2rem; }
+      .options { display:grid; gap:.7rem; }
+      .opt { text-align:left; padding:.9rem 1.1rem; border-radius:14px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+        color:var(--cream); font-size:1rem; font-weight:600; cursor:pointer; transition:transform .12s ease, background .12s ease, border-color .12s ease; }
+      .opt:hover:not(:disabled) { transform:translateY(-2px); background:rgba(255,255,255,.12); }
+      .opt:disabled { cursor:default; }
+      .opt.correct { background:rgba(46,204,113,.25); border-color:var(--green); }
+      .opt.wrong { background:rgba(231,76,60,.25); border-color:var(--red); }
+      .feedback { margin-top:1.1rem; min-height:1.5rem; font-weight:700; }
+      .explain { margin-top:.4rem; font-weight:500; font-size:.92rem; color:rgba(255,244,224,.8); }
+      .next { margin-top:1.3rem; width:100%; padding:.95rem; border:0; border-radius:14px; font-size:1rem; font-weight:800;
+        letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:var(--purple); background:linear-gradient(120deg,var(--yellow),var(--orange)); }
+      .next[hidden] { display:none; }
+      .end { text-align:center; }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3.2rem; color:var(--yellow); margin:.4rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.4rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>🕊️ Pombo Correio Digital</h1></div>
+      <div class="card" id="game">
+        <div class="meta"><span id="progress">Pergunta 1</span><span id="score">Pontos: 0</span></div>
+        <div class="bar"><i id="barFill"></i></div>
+        <p class="prompt" id="prompt"></p>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        <div class="explain" id="explain"></div>
+        <button class="next" id="next" hidden>Próxima →</button>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-digital:pombo-correio-digital:best";
+      const QUESTIONS = [
+        { prompt:"Vais enviar um email ao teu professor. Como deves começar?", options:["Ó stôr!!!","Bom dia, Professor,","E aí?","(sem saudação)"], correct:1, explanation:"Num email formal usa-se uma saudação educada e o nome/cargo." },
+        { prompt:"O que deves escrever no campo 'Assunto' de um email?", options:["Nada","Um resumo curto e claro do email","Toda a mensagem","Emojis aleatórios"], correct:1, explanation:"O assunto resume o email e ajuda quem recebe a perceber o tema." },
+        { prompt:"Escrever TUDO EM MAIÚSCULAS numa mensagem significa…", options:["Que estás a ser educado","Que estás a GRITAR","Que é mais formal","Que é mais rápido"], correct:1, explanation:"Na netiqueta, as maiúsculas são lidas como gritar." },
+        { prompt:"Recebes uma corrente que pede para reenviares a 10 pessoas. O que fazes?", options:["Reenvio logo","Apago e não reenvio","Reenvio a toda a turma","Respondo com dados pessoais"], correct:1, explanation:"As correntes são spam; o melhor é não as reencaminhar." },
+        { prompt:"Para enviares o mesmo email a muitas pessoas sem mostrar os emails delas, usas:", options:["Para (To)","Cc","Bcc (Cco)","Assunto"], correct:2, explanation:"O Bcc/Cco esconde os endereços dos outros destinatários — protege a privacidade." },
+        { prompt:"Antes de enviar uma mensagem importante deves…", options:["Enviar sem ler","Reler para corrigir erros","Escrever à pressa","Apagar o assunto"], correct:1, explanation:"Reler evita erros e mal-entendidos." },
+      ];
+      const els = { progress:q("progress"), score:q("score"), bar:q("barFill"), prompt:q("prompt"), options:q("options"), feedback:q("feedback"), explain:q("explain"), next:q("next"), game:q("game") };
+      function q(id){ return document.getElementById(id); }
+      let index=0, score=0, answered=false;
+      function render(){
+        answered=false; const it=QUESTIONS[index];
+        els.progress.textContent=`Pergunta ${index+1} de ${QUESTIONS.length}`;
+        els.score.textContent=`Pontos: ${score}`;
+        els.bar.style.width=`${(index/QUESTIONS.length)*100}%`;
+        els.prompt.textContent=it.prompt; els.feedback.textContent=""; els.explain.textContent=""; els.next.hidden=true; els.options.innerHTML="";
+        it.options.forEach((text,i)=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=text; b.addEventListener("click",()=>choose(i,b)); els.options.appendChild(b); });
+      }
+      function choose(i,btn){
+        if(answered) return; answered=true; const it=QUESTIONS[index];
+        const bs=[...els.options.querySelectorAll(".opt")]; bs.forEach(b=>b.disabled=true);
+        if(i===it.correct){ score+=10; btn.classList.add("correct"); els.feedback.textContent="✅ Mensagem entregue!"; els.feedback.style.color="var(--green)"; }
+        else { btn.classList.add("wrong"); bs[it.correct].classList.add("correct"); els.feedback.textContent="❌ O pombo perdeu-se!"; els.feedback.style.color="var(--red)"; }
+        els.explain.textContent=it.explanation; els.score.textContent=`Pontos: ${score}`; els.next.hidden=false;
+        els.next.textContent = index+1<QUESTIONS.length ? "Próxima →" : "Ver resultado →";
+      }
+      els.next.addEventListener("click",()=>{ index++; if(index<QUESTIONS.length) render(); else finish(); });
+      function finish(){
+        const max=QUESTIONS.length*10; const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev; els.bar.style.width="100%";
+        els.game.innerHTML=`<div class="end"><p class="badge">${rec?"🏆 Novo recorde!":"Resultado"}</p>
+          <p class="score-big">${score} / ${max}</p><p>${msg(score,max)}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="next" id="again">Jogar outra vez ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+      function msg(s,max){ const p=s/max; if(p===1) return "Parabéns! Comunicas como um verdadeiro profissional! 🕊️"; if(p>=.6) return "Muito bem! Boas maneiras digitais."; if(p>=.3) return "Vais no bom caminho — continua a praticar."; return "Treina a netiqueta e tenta de novo!"; }
+      render();
+    </script>
+  </body>
+</html>

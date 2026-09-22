@@ -1,0 +1,37 @@
+name: Deploy arraial-matematica
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/arraial-matematica/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter arraial-matematica build
+
+      - uses: junobuild/juno-action@v0.7.3
+        with:
+          args: deploy --config-path apps/arraial-matematica/juno.config.mjs
+        env:
+          JUNO_TOKEN: ${{ secrets.JUNO_TOKEN }}
+          # Satellite principal ID (public); set as repo Variable so juno.config.mjs picks it up.
+          JUNO_ARRAIAL_MATEMATICA_SATELLITE_PROD: ${{ vars.JUNO_ARRAIAL_MATEMATICA_SATELLITE_PROD }}

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@import "@fontsource/lilita-one/400.css";
+@import "@fontsource/nunito/400.css";
+@import "@fontsource/nunito/600.css";
+@import "@fontsource/nunito/800.css";
+
+@theme {
+  --font-display: "Lilita One", system-ui, cursive;
+  --font-body: "Nunito", system-ui, sans-serif;
+
+  /* Caracóis palette (matches the Hub planet entry) */
+  --color-leaf: #6ed75a;
+  --color-leaf-deep: #274d1a;
+  --color-festa-yellow: #f5d442;
+  --color-festa-cream: #fff4e0;
+  --color-sky: #9ad0ff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #0c1606;
+  color: var(--color-festa-cream);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Honour the OS "reduce motion" setting (WCAG 2.3.3, plan §8): neutralise
+   CSS animations/transitions. JS-driven motion (framer-motion, R3F) is gated
+   separately via MotionConfig and useReducedMotion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+}

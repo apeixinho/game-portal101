@@ -1,0 +1,14 @@
+{
+  "name": "game-portal101",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "pnpm --filter portal-hub build",
+    "dev": "pnpm --filter portal-hub dev",
+    "lint": "pnpm --filter portal-hub lint",
+    "emulator": "pnpm --filter portal-hub exec juno emulator start",
+    "emulator:stop": "pnpm --filter portal-hub exec juno emulator stop",
+    "emulator:wait": "pnpm --filter portal-hub exec juno emulator wait",
+    "emulator:clear": "pnpm --filter portal-hub exec juno emulator clear"
+  }
+}

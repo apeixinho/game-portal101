@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Olaria Mágica · Arraial da Matemática</title>
+    <style>
+      :root { --violet:#a56bff; --deep:#3e1e7a; --yellow:#f5d442; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; --clay:#e07a3f; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #7a4bd0 0%, #3e1e7a 45%, #1a0b3a 100%); }
+      .wrap { max-width:600px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.2rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.3rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.9rem; color:rgba(255,244,224,.85); margin-bottom:1rem; }
+      .meta b { color:var(--yellow); }
+      .mode { text-align:center; font-size:1.15rem; font-weight:800; margin:0 0 1rem; }
+      .pot { display:flex; gap:.4rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.4rem; }
+      .part { width:46px; height:60px; border-radius:6px 6px 10px 10px; border:2px solid rgba(255,255,255,.25); background:rgba(255,255,255,.06);
+        cursor:default; transition:background .15s ease, transform .1s ease; }
+      .part.fill { background:linear-gradient(160deg,var(--clay),#a8431b); border-color:var(--yellow); }
+      .part.clickable { cursor:pointer; }
+      .part.clickable:hover { transform:translateY(-3px); }
+      .options { display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; }
+      .opt { padding:1rem .4rem; border-radius:14px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+        color:var(--cream); font-size:1.3rem; font-weight:800; cursor:pointer; transition:transform .1s ease, background .12s ease; }
+      .opt:hover:not(:disabled) { transform:translateY(-2px); background:rgba(255,255,255,.12); }
+      .opt:disabled { cursor:default; }
+      .opt.correct { background:rgba(46,204,113,.3); border-color:var(--green); }
+      .opt.wrong { background:rgba(231,76,60,.3); border-color:var(--red); }
+      .check { margin-top:1.1rem; width:100%; padding:.9rem; border:0; border-radius:14px; font-weight:800; text-transform:uppercase; cursor:pointer; color:var(--deep); background:linear-gradient(120deg,var(--yellow),var(--violet)); }
+      .check[hidden] { display:none; }
+      .feedback { text-align:center; margin-top:1rem; min-height:1.4rem; font-weight:800; }
+      .end { text-align:center; }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3rem; color:var(--yellow); margin:.3rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.2rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>🏺 Olaria Mágica</h1></div>
+      <div class="card" id="game">
+        <div class="meta"><span>Peça <b id="round">1</b> de 8</span><span>Pontos: <b id="score">0</b></span></div>
+        <p class="mode" id="mode"></p>
+        <div class="pot" id="pot"></div>
+        <div id="answerArea"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-matematica:olaria-magica:best";
+      const ROUNDS = 8;
+      const els = { round:g("round"), score:g("score"), mode:g("mode"), pot:g("pot"), answerArea:g("answerArea"), feedback:g("feedback"), game:g("game") };
+      function g(id){ return document.getElementById(id); }
+      function rnd(n){ return Math.floor(Math.random()*n); }
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+      let round=1, score=0, denom, num, answered=false;
+      function drawPot(filled){
+        els.pot.innerHTML="";
+        for(let i=0;i<denom;i++){ const d=document.createElement("div"); d.className="part"+(filled[i]?" fill":""); d.dataset.i=i; els.pot.appendChild(d); }
+        return [...els.pot.querySelectorAll(".part")];
+      }
+      function render(){
+        answered=false; els.round.textContent=round; els.feedback.textContent=""; els.answerArea.innerHTML="";
+        denom=2+rnd(7); num=1+rnd(denom-1);
+        const identify = Math.random()<0.5;
+        if(identify){
+          // Show a filled pot, ask the fraction
+          els.mode.textContent="Que fração da peça está pintada?";
+          const filled=Array.from({length:denom},(_,i)=>i<num);
+          drawPot(filled);
+          const opts=new Set([`${num}/${denom}`]);
+          while(opts.size<4){ const dn=2+rnd(7); const nm=1+rnd(dn-1); opts.add(`${nm}/${dn}`); }
+          const wrap=document.createElement("div"); wrap.className="options";
+          shuffle([...opts]).forEach(f=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=f; b.addEventListener("click",()=>checkChoice(f,b)); wrap.appendChild(b); });
+          els.answerArea.appendChild(wrap);
+        } else {
+          // Ask the player to paint a target fraction
+          els.mode.textContent=`Pinta ${num}/${denom} da peça e confirma.`;
+          const filled=Array.from({length:denom},()=>false);
+          const parts=drawPot(filled);
+          parts.forEach(p=>{ p.classList.add("clickable"); p.addEventListener("click",()=>{ const i=Number(p.dataset.i); filled[i]=!filled[i]; p.classList.toggle("fill",filled[i]); }); });
+          const btn=document.createElement("button"); btn.className="check"; btn.textContent="Confirmar"; 
+          btn.addEventListener("click",()=>{ const count=filled.filter(Boolean).length; checkPaint(count); });
+          els.answerArea.appendChild(btn);
+        }
+      }
+      function lock(){ [...els.answerArea.querySelectorAll("button")].forEach(b=>b.disabled=true); [...els.pot.querySelectorAll(".part")].forEach(p=>p.classList.remove("clickable")); }
+      function checkChoice(f,btn){
+        if(answered) return; answered=true; lock();
+        const correct=`${num}/${denom}`;
+        [...els.answerArea.querySelectorAll(".opt")].forEach(b=>{ if(b.textContent===correct) b.classList.add("correct"); });
+        if(f===correct){ score+=10; els.feedback.style.color="var(--green)"; els.feedback.textContent="✅ Certo!"; }
+        else { btn.classList.add("wrong"); els.feedback.style.color="var(--red)"; els.feedback.textContent=`❌ Era ${correct}.`; }
+        els.score.textContent=score; setTimeout(advance,900);
+      }
+      function checkPaint(count){
+        if(answered) return; answered=true; lock();
+        if(count===num){ score+=10; els.feedback.style.color="var(--green)"; els.feedback.textContent="✅ Peça bem pintada!"; }
+        else { els.feedback.style.color="var(--red)"; els.feedback.textContent=`❌ Pintaste ${count}/${denom}, era ${num}/${denom}.`; }
+        els.score.textContent=score; setTimeout(advance,1000);
+      }
+      function advance(){ round++; if(round>ROUNDS) finish(); else render(); }
+      function finish(){
+        const max=ROUNDS*10; const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev;
+        els.game.innerHTML=`<div class="end"><p class="badge">${rec?"🏆 Novo recorde!":"Resultado"}</p>
+          <p class="score-big">${score} / ${max}</p><p>${score===max?"Mestre oleiro das frações! 🏺":"Bom trabalho na olaria! Continua a praticar frações."}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="check" id="again" style="max-width:240px;margin:0 auto">Jogar outra vez ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+      render();
+    </script>
+  </body>
+</html>

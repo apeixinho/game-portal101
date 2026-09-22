@@ -1,0 +1,44 @@
+{
+  "name": "caracois-matematica",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/lilita-one": "^5.2.5",
+    "@fontsource/nunito": "^5.2.5",
+    "@portal/ui": "workspace:*",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.10",
+    "@tailwindcss/vite": "^4.1.5",
+    "framer-motion": "^11.18.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.0",
+    "tailwindcss": "^4.1.5",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@junobuild/cli": "^0.15.4",
+    "@junobuild/config": "^3.0.1",
+    "@junobuild/vite-plugin": "^4.7.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/three": "^0.170.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}

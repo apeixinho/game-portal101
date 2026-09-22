@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Feira de Ficheiros · Arraial Digital</title>
+    <style>
+      :root { --orange:#ff7a2b; --pink:#c22b5f; --yellow:#f5d442; --purple:#2a1248; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #5a2a8c 0%, #2a1248 45%, #160826 100%); }
+      .wrap { max-width:640px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.4rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.85rem; color:rgba(255,244,224,.75); margin-bottom:1rem; }
+      .file { text-align:center; margin-bottom:1.3rem; }
+      .file .icon { font-size:3.4rem; }
+      .file .name { font-size:1.4rem; font-weight:800; margin-top:.3rem; word-break:break-all; }
+      .options { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+      .opt { padding:.9rem; border-radius:14px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+        color:var(--cream); font-size:1rem; font-weight:700; cursor:pointer; transition:transform .12s ease, background .12s ease; }
+      .opt:hover:not(:disabled) { transform:translateY(-2px); background:rgba(255,255,255,.12); }
+      .opt:disabled { cursor:default; }
+      .opt.correct { background:rgba(46,204,113,.3); border-color:var(--green); }
+      .opt.wrong { background:rgba(231,76,60,.3); border-color:var(--red); }
+      .feedback { text-align:center; margin-top:1rem; min-height:1.4rem; font-weight:800; }
+      .end { text-align:center; }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3rem; color:var(--yellow); margin:.4rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.3rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+      .play { padding:.95rem 1.6rem; border:0; border-radius:14px; font-size:1rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:var(--purple); background:linear-gradient(120deg,var(--yellow),var(--orange)); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>📁 Feira de Ficheiros</h1></div>
+      <div class="card" id="game">
+        <div class="meta"><span id="round">Ronda 1 de 10</span><span id="score">Pontos: 0</span></div>
+        <div class="file"><div class="icon" id="icon"></div><div class="name" id="name"></div></div>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-digital:feira-ficheiros:best";
+      const ROUNDS = 10;
+      const TYPES = [
+        { cat:"Imagem", icon:"🖼️", exts:["jpg","png","gif","svg","webp"] },
+        { cat:"Áudio", icon:"🎵", exts:["mp3","wav","ogg"] },
+        { cat:"Vídeo", icon:"🎬", exts:["mp4","mov","avi"] },
+        { cat:"Documento", icon:"📄", exts:["docx","pdf","txt"] },
+        { cat:"Folha de cálculo", icon:"📊", exts:["xlsx","csv"] },
+        { cat:"Apresentação", icon:"📽️", exts:["pptx"] },
+        { cat:"Compactado", icon:"🗜️", exts:["zip","rar"] },
+        { cat:"Programa", icon:"⚙️", exts:["exe","apk"] },
+      ];
+      const NAMES = ["ferias","trabalho","musica_nova","relatorio","foto_turma","jogo","apresentacao","orcamento","backup","aula"];
+      const els = { round:g("round"), score:g("score"), icon:g("icon"), name:g("name"), options:g("options"), feedback:g("feedback"), game:g("game") };
+      function g(id){ return document.getElementById(id); }
+      function rnd(n){ return Math.floor(Math.random()*n); }
+      function pick(a){ return a[rnd(a.length)]; }
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+      let round=1, score=0, current;
+      function newRound(){
+        const type=pick(TYPES); const ext=pick(type.exts);
+        current=type;
+        els.icon.textContent=type.icon;
+        els.name.textContent=`${pick(NAMES)}.${ext}`;
+        els.round.textContent=`Ronda ${round} de ${ROUNDS}`;
+        els.feedback.textContent="";
+        const wrong=shuffle(TYPES.filter(t=>t.cat!==type.cat)).slice(0,3).map(t=>t.cat);
+        const opts=shuffle([type.cat,...wrong]);
+        els.options.innerHTML="";
+        opts.forEach(cat=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=cat; b.addEventListener("click",()=>choose(cat,b)); els.options.appendChild(b); });
+      }
+      function choose(cat,btn){
+        const bs=[...els.options.querySelectorAll(".opt")]; bs.forEach(b=>b.disabled=true);
+        bs.forEach(b=>{ if(b.textContent===current.cat) b.classList.add("correct"); });
+        if(cat===current.cat){ score+=10; els.feedback.style.color="var(--green)"; els.feedback.textContent="✅ Bem arrumado!"; }
+        else { btn.classList.add("wrong"); els.feedback.style.color="var(--red)"; els.feedback.textContent=`❌ Era "${current.cat}".`; }
+        els.score.textContent=`Pontos: ${score}`;
+        setTimeout(()=>{ round++; if(round>ROUNDS) finish(); else newRound(); }, 800);
+      }
+      function finish(){
+        const max=ROUNDS*10; const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev;
+        els.game.innerHTML=`<div class="end"><p class="badge">${rec?"🏆 Novo recorde!":"Resultado"}</p>
+          <p class="score-big">${score} / ${max}</p>
+          <p>${score===max?"Perfeito! Conheces todos os tipos de ficheiro! 📁":"Bom trabalho! Continua a explorar a feira."}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="play" id="again">Jogar outra vez ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+      newRound();
+    </script>
+  </body>
+</html>

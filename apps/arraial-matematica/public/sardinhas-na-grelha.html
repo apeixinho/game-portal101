@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Sardinhas na Grelha · Arraial da Matemática</title>
+    <style>
+      :root { --violet:#a56bff; --deep:#3e1e7a; --yellow:#f5d442; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #7a4bd0 0%, #3e1e7a 45%, #1a0b3a 100%); }
+      .wrap { max-width:560px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.2rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.3rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.3rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.9rem; color:rgba(255,244,224,.85); margin-bottom:.6rem; }
+      .meta b { color:var(--yellow); }
+      .rule { text-align:center; font-size:1.2rem; font-weight:800; margin:.2rem 0 1rem; }
+      .bar { height:8px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; margin-bottom:1rem; }
+      .bar>i { display:block; height:100%; background:linear-gradient(90deg,var(--violet),var(--yellow)); transition:width .2s linear; }
+      .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; }
+      .tile { aspect-ratio:1/1; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.07);
+        color:var(--cream); font-size:1.5rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .1s ease, background .15s ease; }
+      .tile:hover:not(:disabled) { transform:translateY(-2px); }
+      .tile.done { background:rgba(46,204,113,.3); border-color:var(--green); }
+      .tile.bad { background:rgba(231,76,60,.35); border-color:var(--red); }
+      .start, .end { text-align:center; }
+      .start p, .end p { color:rgba(255,244,224,.85); }
+      .play { padding:.95rem 1.6rem; border:0; border-radius:14px; font-size:1rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:var(--deep); background:linear-gradient(120deg,var(--yellow),var(--violet)); }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3rem; color:var(--yellow); margin:.3rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.2rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>🐟 Sardinhas na Grelha</h1></div>
+      <div class="card" id="game">
+        <div class="start">
+          <p>Toca rapidamente nas sardinhas que cumprem a regra. Tens 45 segundos!</p>
+          <button class="play" id="start">Começar 🔥</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-matematica:sardinhas-na-grelha:best";
+      const GAME_SECONDS = 45;
+      const RULES = [
+        { label:"múltiplos de 2 (pares)", test:n=>n%2===0 },
+        { label:"múltiplos de 3", test:n=>n%3===0 },
+        { label:"múltiplos de 5", test:n=>n%5===0 },
+        { label:"números ímpares", test:n=>n%2===1 },
+        { label:"maiores que 15", test:n=>n>15 },
+      ];
+      const game=document.getElementById("game");
+      document.getElementById("start").addEventListener("click",startGame);
+      let score, rule, timeLeft, timer, gridEl, els;
+      function rnd(n){ return Math.floor(Math.random()*n); }
+      function startGame(){
+        score=0; timeLeft=GAME_SECONDS;
+        game.innerHTML=`<div class="meta"><span>Regra atual</span><span>Pontos: <b id="score">0</b></span></div>
+          <div class="rule" id="rule" role="status" aria-live="polite"></div>
+          <div class="bar"><i id="timer"></i></div>
+          <div class="grid" id="grid"></div>`;
+        els={ score:document.getElementById("score"), rule:document.getElementById("rule"), timer:document.getElementById("timer"), grid:document.getElementById("grid") };
+        newGrid();
+        timer=setInterval(()=>{ timeLeft-=0.1; els.timer.style.width=`${(timeLeft/GAME_SECONDS)*100}%`; if(timeLeft<=0){ clearInterval(timer); finish(); } }, 100);
+      }
+      function newGrid(){
+        rule=RULES[rnd(RULES.length)]; els.rule.textContent=`Sardinhas: ${rule.label}`;
+        const nums=[]; while(nums.length<16) nums.push(1+rnd(30));
+        // ensure at least 3 matches
+        let matches=nums.filter(rule.test).length;
+        for(let i=0;matches<3&&i<16;i++){ if(!rule.test(nums[i])){ nums[i]=pickMatch(); matches++; } }
+        els.grid.innerHTML="";
+        nums.forEach(n=>{ const b=document.createElement("button"); b.className="tile"; b.textContent=n; b.dataset.n=n; b.addEventListener("click",()=>tap(b,n)); els.grid.appendChild(b); });
+      }
+      function pickMatch(){ for(let i=0;i<60;i++){ const v=1+rnd(30); if(rule.test(v)) return v; } return 6; }
+      function tap(btn,n){
+        if(btn.disabled||timeLeft<=0) return;
+        if(rule.test(n)){ btn.classList.add("done"); btn.disabled=true; score+=5; els.score.textContent=score;
+          if([...els.grid.querySelectorAll(".tile")].filter(t=>rule.test(Number(t.dataset.n))&&!t.disabled).length===0) setTimeout(newGrid,300);
+        } else { score=Math.max(0,score-3); els.score.textContent=score; btn.classList.add("bad"); setTimeout(()=>btn.classList.remove("bad"),300); }
+      }
+      function finish(){
+        const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev;
+        game.innerHTML=`<div class="end"><p class="badge">${rec?"🏆 Novo recorde!":"Tempo esgotado"}</p>
+          <p class="score-big">${score}</p><p>${score>=120?"Incrível! Grelhador profissional! 🔥":"Boa pesca! Tenta bater o recorde."}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="play" id="again">Jogar outra vez ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+    </script>
+  </body>
+</html>

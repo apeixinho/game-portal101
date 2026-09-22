@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@import "@fontsource/lilita-one/400.css";
+@import "@fontsource/nunito/400.css";
+@import "@fontsource/nunito/600.css";
+@import "@fontsource/nunito/800.css";
+
+@theme {
+  --font-display: "Lilita One", system-ui, cursive;
+  --font-body: "Nunito", system-ui, sans-serif;
+
+  /* Festa palette (matches the Hub planet entry for Arraial Digital) */
+  --color-festa-yellow: #f5d442;
+  --color-festa-orange: #ff7a2b;
+  --color-festa-pink: #c22b5f;
+  --color-festa-purple: #2a1248;
+  --color-festa-cream: #fff4e0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse at 50% -10%, #5a2a8c 0%, #2a1248 45%, #160826 100%);
+  color: var(--color-festa-cream);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Honour the OS "reduce motion" setting (WCAG 2.3.3, plan §8): neutralise
+   CSS animations/transitions. JS-driven motion (framer-motion) is gated
+   separately via MotionConfig. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Festive bunting strip used as a decorative header band. */
+.bunting {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--color-festa-orange) 0 28px,
+      var(--color-festa-yellow) 28px 56px,
+      var(--color-festa-pink) 56px 84px
+    );
+}

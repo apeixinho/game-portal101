@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Concertina Matemática · Arraial da Matemática</title>
+    <style>
+      :root { --violet:#a56bff; --deep:#3e1e7a; --yellow:#f5d442; --cream:#fff4e0; --green:#2ecc71; --red:#e74c3c; }
+      * { box-sizing:border-box; }
+      html, body { margin:0; min-height:100%; font-family:"Nunito",system-ui,sans-serif; color:var(--cream);
+        background:radial-gradient(ellipse at 50% -10%, #7a4bd0 0%, #3e1e7a 45%, #1a0b3a 100%); }
+      .wrap { max-width:600px; margin:0 auto; padding:1.5rem 1.2rem 4rem; }
+      .topbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.2rem; }
+      .back { display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:var(--cream);
+        background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem 1rem; font-weight:700; font-size:.9rem; }
+      .back:hover { background:rgba(255,255,255,.16); }
+      h1 { font-family:"Lilita One",system-ui,cursive; font-weight:400; margin:0; font-size:1.3rem; color:var(--yellow); }
+      .card { background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);
+        border-radius:22px; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+      .meta { display:flex; justify-content:space-between; font-size:.9rem; color:rgba(255,244,224,.85); margin-bottom:1rem; }
+      .meta b { color:var(--yellow); }
+      .seq { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:.5rem; margin-bottom:1.4rem; }
+      .term { min-width:52px; padding:.7rem .5rem; border-radius:12px; background:rgba(255,255,255,.08); text-align:center; font-size:1.5rem; font-weight:800; }
+      .term.missing { background:linear-gradient(150deg,var(--violet),var(--deep)); border:2px dashed var(--yellow); color:var(--yellow); }
+      .options { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+      .opt { padding:1rem; border-radius:14px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+        color:var(--cream); font-size:1.3rem; font-weight:800; cursor:pointer; transition:transform .1s ease, background .12s ease; }
+      .opt:hover:not(:disabled) { transform:translateY(-2px); background:rgba(255,255,255,.12); }
+      .opt:disabled { cursor:default; }
+      .opt.correct { background:rgba(46,204,113,.3); border-color:var(--green); }
+      .opt.wrong { background:rgba(231,76,60,.3); border-color:var(--red); }
+      .feedback { text-align:center; margin-top:1rem; min-height:1.4rem; font-weight:800; }
+      .end { text-align:center; }
+      .end .score-big { font-family:"Lilita One",system-ui,cursive; font-size:3rem; color:var(--yellow); margin:.3rem 0; }
+      .best { color:rgba(255,244,224,.8); margin-bottom:1.2rem; }
+      .badge { display:inline-block; background:rgba(245,212,66,.18); border:1px solid var(--yellow); border-radius:999px; padding:.3rem .9rem; font-weight:800; font-size:.85rem; color:var(--yellow); }
+      .play { padding:.95rem 1.6rem; border:0; border-radius:14px; font-size:1rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:var(--deep); background:linear-gradient(120deg,var(--yellow),var(--violet)); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar"><a class="back" href="/">← Voltar</a><h1>🪗 Concertina Matemática</h1></div>
+      <div class="card" id="game">
+        <div class="meta"><span>Pergunta <b id="round">1</b> de 8</span><span>Pontos: <b id="score">0</b></span></div>
+        <div class="seq" id="seq"></div>
+        <p style="text-align:center;margin:0 0 1.1rem;color:rgba(255,244,224,.8)">Qual é o número que falta?</p>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "arraial-matematica:concertina-matematica:best";
+      const ROUNDS = 8;
+      const els = { round:g("round"), score:g("score"), seq:g("seq"), options:g("options"), feedback:g("feedback"), game:g("game") };
+      function g(id){ return document.getElementById(id); }
+      function rnd(n){ return Math.floor(Math.random()*n); }
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+      let round=1, score=0, answer, answered=false;
+      function makeSequence(){
+        const type=rnd(3); const start=1+rnd(8); let terms=[], step;
+        if(type===0){ step=2+rnd(6); for(let i=0;i<5;i++) terms.push(start+i*step); } // arithmetic +
+        else if(type===1){ step=2+rnd(3); terms.push(start); for(let i=1;i<5;i++) terms.push(terms[i-1]*step); } // geometric ×
+        else { step=2+rnd(5); const s=20+rnd(20); for(let i=0;i<5;i++) terms.push(s-i*step); } // arithmetic -
+        const missing=1+rnd(3); // hide an interior term (1..3)
+        answer=terms[missing];
+        return { terms, missing };
+      }
+      function render(){
+        answered=false; const { terms, missing }=makeSequence();
+        els.round.textContent=round; els.feedback.textContent=""; els.seq.innerHTML="";
+        terms.forEach((t,i)=>{ const d=document.createElement("div"); d.className="term"+(i===missing?" missing":""); d.textContent=i===missing?"?":t; els.seq.appendChild(d); });
+        const opts=new Set([answer]);
+        while(opts.size<4){ const delta=(1+rnd(4))*(Math.random()<.5?1:-1); const c=answer+delta; if(c>0) opts.add(c); }
+        els.options.innerHTML="";
+        shuffle([...opts]).forEach(v=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=v; b.addEventListener("click",()=>choose(v,b)); els.options.appendChild(b); });
+      }
+      function choose(v,btn){
+        if(answered) return; answered=true;
+        const bs=[...els.options.querySelectorAll(".opt")]; bs.forEach(b=>{ b.disabled=true; if(Number(b.textContent)===answer) b.classList.add("correct"); });
+        if(v===answer){ score+=10; els.score.textContent=score; els.feedback.style.color="var(--green)"; els.feedback.textContent="✅ Certo!"; }
+        else { btn.classList.add("wrong"); els.feedback.style.color="var(--red)"; els.feedback.textContent=`❌ Era ${answer}.`; }
+        setTimeout(()=>{ round++; if(round>ROUNDS) finish(); else render(); }, 900);
+      }
+      function finish(){
+        const max=ROUNDS*10; const prev=Number(localStorage.getItem(STORAGE_KEY)||0); const best=Math.max(prev,score);
+        localStorage.setItem(STORAGE_KEY,String(best)); const rec=score>prev;
+        els.game.innerHTML=`<div class="end"><p class="badge">${rec?"🏆 Novo recorde!":"Resultado"}</p>
+          <p class="score-big">${score} / ${max}</p><p>${score===max?"Perfeito! Tens ouvido para padrões! 🪗":"Boa! Continua a treinar as sequências."}</p>
+          <p class="best">Melhor pontuação: <strong>${best}</strong></p>
+          <button class="play" id="again">Jogar outra vez ↻</button></div>`;
+        document.getElementById("again").addEventListener("click",()=>location.reload());
+      }
+      render();
+    </script>
+  </body>
+</html>
