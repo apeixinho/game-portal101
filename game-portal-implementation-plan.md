@@ -1,8 +1,8 @@
 # Implementation Plan — Educational Games Portal
 
-> **Project:** Production-quality near-clones of *Portal do Prof. Ricardo* and its constellation of educational games, redeployed on [Juno](https://juno.build) (Internet Computer).
+> **Project:** Production-quality near-clones of *Portal do Prof. Ricardo* and its constellation of educational games, hosted on **Vercel** (frontends) with optional **Render** for a future realtime relay.
 > **Author target:** Experienced software engineer / ICT professor working in **Cursor + Claude**.
-> **Status:** Living document — Iteration 1. Expect refinement after Phase 0 spike.
+> **Status:** Living document — retargeted from Juno to Vercel/Render. The incomplete Juno Satellite track is parked on git branch `juno-build` (see `docs/archive-juno/`).
 
 ---
 
@@ -11,9 +11,9 @@
 ### Goals
 
 1. Reproduce the visual identity, pedagogical intent, and gameplay of the original portal and its child games at production quality.
-2. Migrate hosting from Vercel / Render to **Juno Satellites** on the Internet Computer, gaining ownership, decentralisation, and a unified data/storage/auth layer.
-3. Establish a sustainable monorepo + CI/CD setup that the developer can extend for future games (Rota, AI Bot Academy, etc.).
-4. Use **Cursor + Claude** as the primary authoring environment, leveraging Juno's `llms.txt` and MCP server for high-fidelity AI assistance.
+2. Host each Vite SPA as its own **Vercel** project (Hobby-friendly, low friction), with cross-app URLs via `VITE_PUBLIC_URL_*`.
+3. Establish a sustainable monorepo + Git-based deploy setup that the developer can extend for future games (Rota, AI Bot Academy, etc.).
+4. Use **Cursor + Claude** as the primary authoring environment.
 
 ### In-scope apps
 
@@ -26,8 +26,8 @@
 
 ### Out-of-scope (deferred)
 
-* **Expedição Ciência** — realtime multiplayer 3D (Three.js + Socket.IO + Node). The Socket.IO model conflicts with Juno's event-driven Functions (see §7); deferred until a realtime backend is justified.
-* **Arraial da Matemática 3D** — realtime multiplayer 3D (Three.js + Socket.IO + Node). Same realtime constraint as Expedição Ciência; deferred.
+* **Expedição Ciência** — realtime multiplayer 3D (Three.js + Socket.IO + Node). Deferred until a realtime backend on Render is justified.
+* **Arraial da Matemática 3D** — realtime multiplayer 3D. Same constraint; deferred.
 * **Rota dos Descobrimentos** — heavy 3D ocean/map rendering. Re-evaluate after Phase 4.
 * **AI Bot Academy** — Monaco editor + custom block programming. Distinct architecture; defer.
 
@@ -35,20 +35,19 @@
 
 * Single developer, part-time cadence (assume 4–8 productive hours per workday).
 * Portuguese (pt-PT) UI copy and game terminology must be preserved verbatim.
-* No paid third-party realtime services (Pusher, Ably, Liveblocks). Multiplayer must run on Juno or a self-hosted fallback.
-* Free tier preferred while learning; willingness to pay ICP cycles for production traffic.
+* No paid third-party realtime services (Pusher, Ably, Liveblocks). Multiplayer uses the self-hosted `realtime-relay` on Render when needed.
+* Free tier preferred (Vercel Hobby + Render free Web Service).
 
-### Why Juno
+### Why Vercel (+ Render later)
 
-* **Single deployable unit** (a *Satellite*) bundles hosting + datastore + storage + serverless functions. No separate Vercel/Render/Firebase wiring.
-* **Static asset hosting** is a first-class case — perfect for the vanilla HTML/CSS/JS games and for built React/Vite SPA bundles.
-* **Datastore + Storage** replace ad-hoc backends for quiz content, leaderboards, and user-generated content (profile pictures, saved scores as JSON).
-* **GitHub Actions** integration via the official `juno-action` for CI/CD.
-* **AI-friendly:** [`llms.txt`](https://juno.build/llms.txt) + [`llms-full.txt`](https://juno.build/llms-full.txt) plus the [`junobuild-mcp-server`](https://www.jsdelivr.com/package/npm/junobuild-mcp-server) make Cursor genuinely productive against Juno-specific APIs.
+* **Zero-friction static/SPA hosting** for Vite `dist/` with Preview deploys and a global CDN.
+* **One project per app** matches independent deploys without a shared Satellite ID ceremony.
+* **Render** fits the long-lived Node `ws` relay when an online mode lands (free tier sleeps — acceptable cold starts).
+* Historical Juno work remains recoverable on `juno-build` if ICP hosting is revisited.
 
 ### Headline risk (read first)
 
-**Juno Functions are event-triggered hooks (on document/asset writes), not long-lived WebSocket servers.** The TS/Rust runtime [does not provide full Node.js support](https://juno.build/docs/reference/functions/typescript/node.md) and execution is asynchronous and transient. This is why any realtime/multiplayer feature **cannot** be a literal Socket.IO port to Juno Functions. Phase 3 treats this as a first-class design problem and ships a **reusable realtime foundation** (a small `ws` relay + transport SDK) decoupled from any specific game, so a multiplayer experience can be added later without re-litigating the architecture. The two original realtime 3D games (*Expedição Ciência*, *Arraial da Matemática 3D*) are out of scope for this plan.
+**Serverless platforms do not provide persistent WebSocket servers.** Any realtime/multiplayer feature uses `services/realtime-relay` (Node + `ws`) on Render, plus `packages/game-sdk` (ws + polling). The two original realtime 3D games (*Expedição Ciência*, *Arraial da Matemática 3D*) remain out of scope.
 
 ---
 
@@ -56,7 +55,7 @@
 
 ### 2.1 Monorepo layout
 
-A pnpm workspaces monorepo. Each game is an independently deployable Satellite, plus the Hub Satellite acts as the entry portal that links out to them.
+A pnpm workspaces monorepo. Each game is an independently deployable **Vercel project**, plus the Hub as the entry portal that links out to them.
 
 ```
 educational-games/
@@ -95,39 +94,37 @@ educational-games/
 │   ├── ui/                        # Shared Tailwind v4 theme tokens, base components (Button, Card, ScoreDisplay, TimerBar)
 │   ├── audio-engine/              # Procedural Web Audio synthesis (shared)
 │   ├── three-utils/               # Camera rigs, loaders, post-processing
-│   ├── juno-client/               # Thin wrapper over @junobuild/core
-│   └── game-sdk/                  # Realtime transport SDK (ws + polling fallback) + score/event helpers
+│   ├── game-sdk/                  # Realtime transport SDK (ws + polling fallback) + score/event helpers
 ├── services/
-│   └── realtime-relay/            # Reusable Node + ws realtime foundation (Phase 3)
-├── .github/workflows/             # juno-action deploy pipelines per app
-├── juno.config.mjs                # Per-app config, or one root + per-app overrides
+│   └── realtime-relay/            # Reusable Node + ws realtime foundation (deploy on Render later)
+├── docs/
+│   └── deploy-vercel.md           # One Vercel project per app
 ├── pnpm-workspace.yaml
 ├── CLAUDE.md                      # Repo-wide AI rules
 └── .cursorrules                   # Cursor-specific rules
 ```
 
-**Why one Satellite per app:** isolates costs, lets each game be deployed independently, and avoids one heavy bundle. The Hub Satellite hosts only the shell + the planet selector; each planet's "enter" link points to the child Satellite's custom subdomain (e.g. `arraial-digital.profricardo.app`).
+**Why one Vercel project per app:** isolates deploys, keeps Preview URLs clear, and avoids one heavy bundle. The Hub hosts only the shell + the planet selector; each planet's "enter" link points to the child project's URL (override via `VITE_PUBLIC_URL_*`).
 
 ### 2.2 Vite + React as the shell
 
 Vite + React is used as the frontend framework for all apps in this monorepo. Each app is a standard React SPA with `src/main.tsx` as the entry point, `src/App.tsx` as the root component, and React Router v6 for client-side routing via `src/routes/`.
 
 Key points:
-* **React SPA per app** — each app ships a fully client-rendered React bundle, which maps cleanly to Juno hosting (`source: "dist"` in `juno.config.mjs`).
+* **React SPA per app** — each app ships a fully client-rendered React bundle to Vercel (`dist/`).
 * **Portal Hub stays React 18 + Vite + R3F + drei** — the 3D solar system is implemented as standard React components; no special hydration directives needed.
 * **Vanilla HTML/CSS/JS games** (Arraial Digital, Arraial da Matemática) are plain `.html` files placed in the `public/` directory of their respective Vite apps. Vite serves them as static files unchanged — no React wrapper is needed.
 * **Tailwind CSS v4** provides the styling layer for all React components across every app (see §3 and Phase 0 setup).
 
-### 2.3 Juno's role per phase
+### 2.3 Hosting & backend per phase
 
 | Capability | Phase introduced | Used by |
 |---|---|---|
-| Hosting (static assets) | Phase 0/1 | All apps — React/Vite SPA bundles |
-| Storage (user-generated content) | Phase 2+ | Profile pictures, saved scores as JSON |
-| Datastore (JSON docs) | Phase 4 | Quiz content, leaderboards (room state only if an online mode is added) |
-| Functions (TS hooks) | Phase 4 | Score validation (room lifecycle only if an online mode is added) |
-| Authentication (anonymous + IC identity) | Phase 4 | Optional teacher accounts |
-| Orbiter (analytics) | Phase 4 | Page views, custom events, web vitals |
+| Hosting (static SPA) | Phase 0/1 | All apps on **Vercel** |
+| Cross-app URL env | Phase 0/1 | `VITE_PUBLIC_URL_*` |
+| PWA / offline | Phase 4 | Service worker per app |
+| Realtime relay | Deferred | `services/realtime-relay` on **Render** when online modes ship |
+| Quiz/content CMS | Deferred | Optional later (local JSON / third-party) — not Juno Datastore on `main` |
 
 ---
 
@@ -146,10 +143,10 @@ Key points:
 | Styling | **Tailwind CSS v4** + design tokens in `packages/ui` | Zero-config v4 integration via `@tailwindcss/vite` plugin. Faithful reproduction of *Lilita One + Nunito* palette and feel. Custom tokens in `@theme { }` block in CSS. Vanilla HTML games keep their existing inline `<style>` blocks — no Tailwind needed there. |
 | Fonts | Google Fonts (self-hosted via [`@fontsource`](https://fontsource.org/) for offline / PWA) | |
 | Realtime client | **`@portal/game-sdk`** transport (ws primary, Datastore/HTTP polling fallback) | Transport-agnostic; no Socket.IO. See §7. |
-| Realtime server | Small **Node `ws` relay** (`services/realtime-relay`) for fan-out + **Juno Datastore** for authoritative persistence | Reusable foundation, not tied to a specific game — see §7.4. |
-| Deploy target | **Juno Satellite** per app | `juno deploy` via CLI; `junobuild/juno-action` in CI. |
-| Local dev | **Juno Emulator** (`juno emulator start`, image `junobuild/skylab`) | All-in-one local Console + Satellite. |
-| CI/CD | **GitHub Actions** | Per-app workflow; matrix build for affected apps via Turborepo or Nx. |
+| Realtime server | Small **Node `ws` relay** (`services/realtime-relay`) for fan-out | Deploy on **Render** when an online mode ships. |
+| Deploy target | **Vercel** — one project per app | Git integration; see `docs/deploy-vercel.md`. |
+| Local dev | Vite `pnpm --filter <app> dev` | No emulator required. |
+| CI/CD | **Vercel Git** (optional GH Actions for typecheck) | Path-filtered builds per Root Directory. |
 | Package manager | **pnpm** workspaces | |
 | Linting | **ESLint** + **Prettier** | |
 | Tests | **Vitest** for unit, **Playwright** for game smoke tests | E2E only on Phase 4. |
@@ -161,8 +158,10 @@ Key points:
 
 ## 4. Phase 0: Environment Setup (~3–5 days)
 
+> **Superseded on `main`:** hosting is Vercel (see `docs/deploy-vercel.md`). The Juno emulator / Satellite steps below are retained only as historical notes for branch `juno-build`.
+
 ### Objective
-Stand up the monorepo, the Juno emulator, the Cursor + MCP toolchain, and a "hello world" Satellite deploy, so all subsequent phases can move fast.
+Stand up the monorepo, the Cursor toolchain, and a "hello world" deploy to **Vercel**, so all subsequent phases can move fast.
 
 ### Deliverables
 * Working monorepo with one placeholder React + Vite app deployable to a Juno Satellite.

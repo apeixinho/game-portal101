@@ -2,9 +2,9 @@
  * Cross-app URL resolution shared by every child app.
  *
  * Consults `import.meta.env` first, then falls back to the live Hub URL so the
- * "voltar ao portal" link works before the Hub's Juno Satellite is wired up.
- * Set `VITE_PUBLIC_URL_HUB` per app (GH Actions env / local .env) to point at
- * the Juno-hosted Hub once it is live.
+ * "voltar ao portal" link works before local overrides are set.
+ * Set `VITE_PUBLIC_URL_HUB` per app (Vercel env / local .env) to point at this
+ * monorepo's Hub deployment. See docs/deploy-vercel.md.
  */
 
 const HUB_FALLBACK = "https://portaldoprofricardo.vercel.app";

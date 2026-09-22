@@ -1,12 +1,11 @@
 # AGENTS.md
 
-Agent notes for the educational games portal (pnpm monorepo + Juno). Human Quick start: [README.md](README.md). Roadmap: [game-portal-implementation-plan.md](game-portal-implementation-plan.md).
+Agent notes for the educational games portal (pnpm monorepo + Vercel). Human Quick start: [README.md](README.md). Roadmap: [game-portal-implementation-plan.md](game-portal-implementation-plan.md). Deploy: [docs/deploy-vercel.md](docs/deploy-vercel.md).
 
 ## Toolchain
 
 - **Node.js 20+**
 - **pnpm 9** (`corepack prepare pnpm@9.15.4 --activate`)
-- Docker only if using the local Juno emulator
 
 ## Run / test / build
 
@@ -14,17 +13,19 @@ Agent notes for the educational games portal (pnpm monorepo + Juno). Human Quick
 pnpm install
 pnpm dev
 pnpm --filter portal-hub build
+pnpm build:all
 ```
 
-App package: `apps/portal-hub`. Typical Vite URL: http://localhost:5173
+App packages live under `apps/`. Typical Vite URL: http://localhost:5173
 
 ## Caveats
 
-- Satellite IDs and deploy tokens are env/secrets (`JUNO_SATELLITE_DEV`, `JUNO_SATELLITE_PROD`, `JUNO_TOKEN`). Never commit them; use `.env.example` as the contract.
+- Cross-app URLs use `VITE_PUBLIC_URL_*` (see `.env.example`). Never commit real `.env` files with secrets.
 - Prefer **pnpm** workspace filters (`--filter portal-hub`); do not invent a root npm script that bypasses the workspace.
-- CI deploy workflow expects GitHub secret `JUNO_TOKEN`.
+- Production deploys use **Vercel Git integration** (one project per app). The Juno CI workflows were removed from `main`.
+- Incomplete Juno work is on branch **`juno-build`** only.
 
 ## Do not
 
-- Commit `.env` files with real Satellite IDs or access keys.
-- Deploy to production Satellite from a scratch/dev config without confirming IDs.
+- Commit `.env` files with credentials or private tokens.
+- Reintroduce `@junobuild/*` on `main` without an explicit decision to revive that track.

@@ -1,5 +1,5 @@
-# Reusable realtime relay foundation for future online modes (plan §7, Option B).
-# Stateless ws fan-out + REST polling fallback; safe to restart/redeploy.
+# Reusable realtime relay foundation for future online modes.
+# Stateless ws fan-out + REST polling fallback; safe to restart/redeploy (Render).
 FROM node:20-alpine AS build
 WORKDIR /app
 RUN corepack enable

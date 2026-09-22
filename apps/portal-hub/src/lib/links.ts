@@ -1,15 +1,9 @@
 /**
  * Cross-app URL resolution.
  *
- * Implementation plan §5.6 calls for a shared `packages/ui/src/links.ts` with
- * `PUBLIC_URL_*` env vars per child Satellite. While the `packages/` workspace
- * doesn't yet exist, we keep the lookup here and consult `import.meta.env`
- * first, then fall back to the original Vercel/Render URLs baked into the
- * planet catalogue. When the Juno child Satellites come online (Phase 2+),
- * set the matching env var in each app's GH Actions workflow and the Hub will
- * point at the new home automatically.
- *
- * TODO(phase-2): extract to `packages/ui/src/links.ts` so other apps share it.
+ * Consults `import.meta.env` first (`VITE_PUBLIC_URL_*`), then falls back to the
+ * planet catalogue URLs. Set the matching vars in each Vercel project (or local
+ * `.env`) so the Hub points at this monorepo's deployments. See docs/deploy-vercel.md.
  */
 
 import type { Planet } from "../data/planets";
